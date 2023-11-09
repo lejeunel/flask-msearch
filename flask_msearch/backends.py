@@ -13,7 +13,7 @@
 import logging
 
 from flask.helpers import locked_cached_property
-from flask_sqlalchemy import models_committed
+from flask_sqlalchemy.track_modifications import models_committed
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.inspection import inspect
 from werkzeug.utils import import_string
@@ -31,21 +31,20 @@ def get_tables(model):
     if hasattr(model, "registry"):
         return [m.class_ for m in model.registry.mappers]
     return [
-        m for m in model._decl_class_registry.values()
-        if hasattr(m, "__tablename__")
+        m for m in model._decl_class_registry.values() if hasattr(m, "__tablename__")
     ]
 
 
 def relation_column(instance, fields):
-    '''
+    """
     such as: user.username
     such as: replies.content
-    '''
+    """
     relation = getattr(instance.__class__, fields[0]).property
     _field = getattr(instance, fields[0])
-    if relation.lazy == 'dynamic':
+    if relation.lazy == "dynamic":
         _field = _field.first()
-    return getattr(_field, fields[1]) if _field else ''
+    return getattr(_field, fields[1]) if _field else ""
 
 
 class BaseSchema(object):
@@ -63,10 +62,11 @@ class BaseSchema(object):
 
         schema = getattr(model, "__msearch_schema__", dict())
         for field in self.index.searchable:
-            if '.' in field:
-                fields = field.split('.')
+            if "." in field:
+                fields = field.split(".")
                 field_attr = getattr(
-                    getattr(model, fields[0]).property.mapper.class_, fields[1])
+                    getattr(model, fields[0]).property.mapper.class_, fields[1]
+                )
             else:
                 field_attr = getattr(model, field)
 
@@ -78,8 +78,9 @@ class BaseSchema(object):
                     schema_fields[field] = field_type
                 continue
 
-            if hasattr(field_attr, 'descriptor') and isinstance(
-                    field_attr.descriptor, hybrid_property):
+            if hasattr(field_attr, "descriptor") and isinstance(
+                field_attr.descriptor, hybrid_property
+            ):
                 schema_fields[field] = self.fields_map("text")
                 continue
 
@@ -137,7 +138,7 @@ class BaseBackend(object):
     def init_app(self, app):
         self.app = app
         if not self.db:
-            self.db = self.app.extensions['sqlalchemy'].db
+            self.db = self.app.extensions["sqlalchemy"].db
         self.db.Model.query_class = self._query_class(self.db.Model.query_class)
 
     def _query_class(self, q):
@@ -150,12 +151,8 @@ class BaseBackend(object):
 
         return Query
 
-    def create_index(self,
-                     model='__all__',
-                     update=False,
-                     delete=False,
-                     yield_per=100):
-        if model == '__all__':
+    def create_index(self, model="__all__", update=False, delete=False, yield_per=100):
+        if model == "__all__":
             return self.create_all_index(update, delete)
         ix = self.index(model)
         instances = model.query.enable_eagerloads(False).yield_per(yield_per)
@@ -185,15 +182,16 @@ class BaseBackend(object):
     def delete_all_index(self, yield_per=100):
         return self.create_all_index(delete=True, yield_per=yield_per)
 
-    def update_index(self, model='__all__', yield_per=100):
+    def update_index(self, model="__all__", yield_per=100):
         return self.create_index(model, update=True, yield_per=yield_per)
 
-    def delete_index(self, model='__all__', yield_per=100):
+    def delete_index(self, model="__all__", yield_per=100):
         return self.create_index(model, delete=True, yield_per=yield_per)
 
     def whoosh_search(self, m, query, fields=None, limit=None, or_=False):
         self.logger.warning(
-            'whoosh_search has been replaced by msearch.please use msearch')
+            "whoosh_search has been replaced by msearch.please use msearch"
+        )
         return self.msearch(m, query, fields, limit, or_)
 
     # def msearch(self, m, query, fields=None, limit=None, or_=False):
