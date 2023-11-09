@@ -24,23 +24,20 @@ class Search(object):
         self.db = db
         self.analyzer = analyzer
         if app is not None:
-            self.init_app(app)
+            self.init_app(app, self.db, self.analyzer)
 
-    def init_app(self, app):
-        app.config.setdefault('MSEARCH_BACKEND', 'simple')
-        msearch_backend = app.config['MSEARCH_BACKEND']
-        if msearch_backend == 'simple':
-            backend = import_string(
-                "flask_msearch.simple_backend.SimpleSearch")
-        elif msearch_backend == 'whoosh':
-            backend = import_string(
-                "flask_msearch.whoosh_backend.WhooshSearch")
-        elif msearch_backend == 'elasticsearch':
-            backend = import_string(
-                "flask_msearch.elasticsearch_backend.ElasticSearch")
+    def init_app(self, app, db, analyzer):
+        app.config.setdefault("MSEARCH_BACKEND", "simple")
+        msearch_backend = app.config["MSEARCH_BACKEND"]
+        if msearch_backend == "simple":
+            backend = import_string("flask_msearch.simple_backend.SimpleSearch")
+        elif msearch_backend == "whoosh":
+            backend = import_string("flask_msearch.whoosh_backend.WhooshSearch")
+        elif msearch_backend == "elasticsearch":
+            backend = import_string("flask_msearch.elasticsearch_backend.ElasticSearch")
         else:
-            raise ValueError('backends {} not exists.'.format(msearch_backend))
-        self._backend = backend(app, self.db, self.analyzer)
+            raise ValueError("backends {} not exists.".format(msearch_backend))
+        self._backend = backend(app, db, analyzer)
 
     def __getattr__(self, name):
         if name == "_backend":
